@@ -52,7 +52,7 @@ typedef struct Node {
     struct Node* next;
 } Node;
 
-// walidacja i pomocnicze
+// walidacja
 bool validate_author(const char* author);
 bool validate_content(const char* content);
 bool validate_category(const char* category);
@@ -179,7 +179,53 @@ int remove_post(Node* head, int id){
     }
     return 0;
 }
-int remove_posts_by_criterion(Node* head, int criterion_type, const void* value);
+int remove_posts_by_status(Node* head, const char* status){
+    if(head == NULL) {
+        printf("Błąd: head jest NULL\n");
+        return 0;
+    }
+    
+    if(status == NULL) {
+        printf("Błąd: status jest NULL\n");
+        return 0;
+    }
+
+    int removed_count = 0;
+    Node* p = head;
+    
+
+    while(p->prev != NULL) {
+        p = p->prev;
+    }
+
+    while(p != NULL) {
+        Node* next = p->next;
+        
+        if(p->data != NULL && strcmp(p->data->status, status) == 0) {
+
+            if(p->prev != NULL) {
+                p->prev->next = p->next;
+            }
+            if(p->next != NULL) {
+                p->next->prev = p->prev;
+            }
+
+            free(p->data);
+            free(p);
+            removed_count++;
+        }
+        
+        p = next;
+    }
+
+    if(removed_count == 0) {
+        printf("Nie znaleziono wpisów ze statusem: %s\n", status);
+    } else {
+        printf("Usunięto %d wpis(ów) ze statusem: %s\n", removed_count, status);
+    }
+    
+    return removed_count;
+}
 Wpis* find_post_by_id(Node* head, int id);
 
 // edycja postów
