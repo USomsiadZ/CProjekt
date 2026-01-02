@@ -4,13 +4,13 @@ Platforma „QuickTalk” to jedno z najpopularniejszych mediów społecznościo
 
 Twoim zadaniem jest stworzenie programu umożliwiającego zarządzanie danymi o zgłoszonych postach: ich rejestracją, wyszukiwaniem, modyfikacją, sortowaniem, usuwaniem oraz zapisem/odczytem z pliku. System ułatwia szybkie sortowanie i ocenę treści tak, aby mem o kotach nie trafił na nodeę „poważne zagrożenie dla demokracji”.
 
-Każdy post posiada minimalny (może być rozszerzony) zestaw cech, które muszą zostać zapisane w systemie:
+Każdy wpis posiada minimalny (może być rozszerzony) zestaw cech, które muszą zostać zapisane w systemie:
 
 numeru ID wpisu - wewnętrzny unikalny identyfikator wszystkich wpisów w systemie (nadawany automatycznie w momencie dodania wpisu);
 nazwa autora - nazwa użytkownika publikującego wpis, o maksymalnej długości 100 znaków. Pole może zawierać pseudonim, nazwę konta lub inny identyfikator;
 treść posta - tekst wpisu, o maksymalnej długości zależnej od projektu (np. do 280 znaków). Treść powinna być przechowywana jako tekst i nie powinna być traktowana jako pole kluczowe;
-kategoria zgłoszenia - powód, dla którego post został zgłoszony: spam, hejt, wulgaryzmy, fejk-news, nieodpowiednie treści. 
-liczba zgłoszeń - liczba określająca, ile razy użytkownicy zgłosili dany post do moderacji;
+kategoria zgłoszenia - powód, dla którego wpis został zgłoszony: spam, hejt, wulgaryzmy, fejk-news, nieodpowiednie treści. 
+liczba zgłoszeń - liczba określająca, ile razy użytkownicy zgłosili dany wpis do moderacji;
 status moderacji - aktualny stan wpisu, np.: do weryfikacji, w trakcie analizy, zatwierdzone, usunięte. Posty, które nie zostały jeszcze przeanalizowane przez moderatora, nie mogą zostać usunięte. Najpierw należy zmienić ich status na zatwierdzone lub usunięte w wyniku moderacji. Program powinien zablokować próbę usunięcia i wyświetlić stosowny komunikat.
 */
 #include <stdio.h>
@@ -37,37 +37,67 @@ status moderacji - aktualny stan wpisu, np.: do weryfikacji, w trakcie analizy, 
 #define STATUS_APPROVED "zatwierdzone"
 #define STATUS_DELETED "usunięte"
 
-typedef struct Post {
+typedef struct Wpis {
     int id;
     char author[MAX_AUTHOR_LEN];
     char content[MAX_CONTENT_LEN];
     char category[MAX_CATEGORY_LEN];
     int report_count;
     char status[MAX_STATUS_LEN];
-} Post;
+} Wpis;
 
 typedef struct Node {
-    Post* post;
+    Wpis* wpis;
     struct Node* prev;
     struct Node* next;
 } Node;
 
 
-// funkcje do zarządzania nodeą
-Node* create_node(void);
-void destroy_node(Node* node);
+// funkcje do zarządzania node
+Node* create_node(void){
+    Node* node = calloc(1, sizeof(Node));
+    if(node == NULL){
+        printf("Błąd alokacji pamięci\n");
+        return NULL;
+    }
+    node->wpis = NULL;
+    node->prev = NULL;
+    node->next = NULL;
+    return node;
+}
+void destroy_node(Node* node) {
+    if (node == NULL) {
+        printf("Błąd: node jest NULL\n");
+        return;
+    }
+    // znajdź początek listy
+    Node* head = node;
+    while (head->prev != NULL) {
+        head = head->prev;
+    }
+    // usuń wszystkie węzły
+    Node* p = head;
+    while (p != NULL) {
+        Node* next = p->next;
+        if (p->wpis != NULL) {
+            free(p->wpis);
+        }
+        free(p);
+        p = next;
+    }
+}
 
 // operacje na postach
-Post* add_post(Node* node, const char* author, const char* content, 
+Wpis* add_post(Node* node, const char* author, const char* content, 
                const char* category, const char* status);
 int remove_post(Node* node, int id);
 int remove_posts_by_criterion(Node* node, int criterion_type, const void* value);
-Post* find_post_by_id(Node* node, int id);
+Wpis* find_post_by_id(Node* node, int id);
 
 // edycja postów
 int edit_post(Node* node, int id, const char* name, const void* new_value);
 int update_post_status(Node* node, int id, const char* new_status);
-bool can_delete_post(const Post* post);
+bool can_delete_post(const Wpis* wpis);
 
 // wyszukiwanie
 Node* search_by_author(Node* node, const char* author, bool prefix_match);
@@ -82,7 +112,7 @@ Node* sort_by_id(Node* node);
 Node* sort_by_category(Node* node);
 
 // wyświetlanie
-void display_post(const Post* post);
+void display_post(const Wpis* wpis);
 void display_all_posts(Node* node);
 void display_search_results(Node* results);
 void display_post_summary(Node* node);
@@ -133,9 +163,9 @@ void show_file_menu(Node* node, const char* filename, bool binary);
 
 void show_menu(void){
     printf("\n=== SYSTEM MODERACJI POSTÓW QUICKTALK ===\n");
-    printf("1. Dodaj nowy post\n");
-    printf("2. Edytuj post\n");
-    printf("3. Usuń post\n");
+    printf("1. Dodaj nowy wpis\n");
+    printf("2. Edytuj wpis\n");
+    printf("3. Usuń wpis\n");
     printf("4. Wyświetl wszystkie posty\n");
     printf("5. Wyszukaj posty\n");
     printf("6. Sortuj posty\n");
