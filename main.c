@@ -252,8 +252,90 @@ void display_search_results(Node* results);
 void display_post_summary(Node* head);
 
 // pliki
-int save_to_file(Node* head, const char* filename, bool binary);
+int save_to_file(Node* head, const char* filename){
+    if(head == NULL){
+        printf("Błąd: head jest NULL\n");
+        return 0;
+    }
+    
+    if(filename == NULL){
+        printf("Błąd: nazwa pliku jest NULL\n");
+        return 0;
+    }
+    
+    FILE* f = fopen(filename, "w");
+    if(!f){
+        printf("Błąd otwierania pliku\n");
+        return 0;
+    }
+
+    Node* p = head;
+    while(p->prev != NULL){
+        p = p->prev;
+    }
+    
+    int count = 0;
+    
+    while(p != NULL){
+        if(p->data != NULL){
+            fprintf(f, "%d\n", p->data->id);
+            fprintf(f, "%s\n", p->data->author);
+            fprintf(f, "%s\n", p->data->content);
+            fprintf(f, "%s\n", p->data->category);
+            fprintf(f, "%d\n", p->data->report_count);
+            fprintf(f, "%s\n", p->data->status);
+            count++;
+        }
+        p = p->next;
+    }
+    
+    fclose(f);
+    printf("Zapisano %d wpisów do pliku: %s\n", count, filename);
+    return count;
+}
 int load_from_file(Node* head, const char* filename, bool binary);
+
+int save_to_file_bin(Node* head, const char* filename){
+    if(head == NULL){
+        printf("Błąd: head jest NULL\n");
+        return 0;
+    }
+    
+    if(filename == NULL){
+        printf("Błąd: nazwa pliku jest NULL\n");
+        return 0;
+    }
+    
+    // Otwórz plik w trybie binarnym
+    FILE* f = fopen(filename, "wb");
+    if(!f){
+        perror("Błąd otwierania pliku");
+        return 0;
+    }
+    
+    // Przejdź do początku listy
+    Node* p = head;
+    while(p->prev != NULL){
+        p = p->prev;
+    }
+    
+    int count = 0;
+    
+    // Zapis binarny - zapisz każdy wpis używając fwrite
+    while(p != NULL){
+        if(p->data != NULL){
+            fwrite(p->data, sizeof(Wpis), 1, f);
+            count++;
+        }
+        p = p->next;
+    }
+    
+    fclose(f);
+    printf("Zapisano %d wpis(ów) do pliku binarnego: %s\n", count, filename);
+    return count;
+}
+
+
 
 
 
