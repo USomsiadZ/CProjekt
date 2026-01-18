@@ -53,11 +53,95 @@ typedef struct Node {
 } Node;
 
 // walidacja
-bool validate_author(const char* author);
-bool validate_content(const char* content);
-bool validate_category(const char* category);
-bool validate_status(const char* status);
-int get_next_id(Node* head);
+bool validate_author(const char* author) {
+    if (author == NULL) {
+        return false;
+    }
+    
+    size_t len = strlen(author);
+    
+    if (len == 0) {
+        return false;
+    }
+    
+    if (len >= MAX_AUTHOR_LEN) {
+        return false;
+    }
+    
+    return true;
+}
+bool validate_content(const char* content) {
+    if (content == NULL) {
+        return false;
+    }
+    
+    size_t len = strlen(content);
+    
+    if (len == 0) {
+        return false;
+    }
+    // '\0'
+    if (len >= MAX_CONTENT_LEN) {
+        return false;
+    }
+    
+    return true;
+}
+bool validate_category(const char* category) {
+    if (category == NULL) {
+        return false;
+    }
+    
+    if (strcmp(category, CATEGORY_SPAM) == 0 ||
+        strcmp(category, CATEGORY_HATE) == 0 ||
+        strcmp(category, CATEGORY_PROFANITY) == 0 ||
+        strcmp(category, CATEGORY_FAKE_NEWS) == 0 ||
+        strcmp(category, CATEGORY_INAPPROPRIATE) == 0) {
+        return true;
+    }
+    
+    return false;
+}
+bool validate_status(const char* status) {
+    if (status == NULL) {
+        return false;
+    }
+    
+    if (strcmp(status, STATUS_TO_VERIFY) == 0 ||
+        strcmp(status, STATUS_IN_ANALYSIS) == 0 ||
+        strcmp(status, STATUS_APPROVED) == 0 ||
+        strcmp(status, STATUS_DELETED) == 0) {
+        return true;
+    }
+    
+    return false;
+}
+int get_next_id(Node* head) {
+    if (head == NULL) {
+        return 1;
+    }
+    
+    Node* p = head;
+    while (p->prev != NULL) {
+        p = p->prev;
+    }
+    
+    if (p->data == NULL) {
+        return 1;
+    }
+    
+    int max_id = 0;
+    while (p != NULL) {
+        if (p->data != NULL) {
+            max_id = p->data->id > max_id ? p->data->id : max_id;
+        }
+        p = p->next;
+    }
+    
+    return max_id + 1;
+}
+
+
 
 // funkcje do zarządzania node
 Node* create_node(void){
@@ -236,14 +320,10 @@ bool can_delete_post(const Wpis* wpis);
 // wyszukiwanie
 Node* search_by_author(Node* head, const char* author, bool prefix_match);
 Node* search_by_report_count(Node* head, int count);
-Node* search_by_category(Node* head, const char* category);
-Node* search_by_status(Node* head, const char* status);
 
 // sortowanie
 Node* sort_by_author(Node* head);
 Node* sort_by_report_count(Node* head);
-Node* sort_by_id(Node* head);
-Node* sort_by_category(Node* head);
 
 // wyświetlanie
 void display_post(const Wpis* wpis);
@@ -293,8 +373,6 @@ int save_to_file(Node* head, const char* filename){
     printf("Zapisano %d wpisów do pliku: %s\n", count, filename);
     return count;
 }
-int load_from_file(Node* head, const char* filename, bool binary);
-
 int save_to_file_bin(Node* head, const char* filename){
     if(head == NULL){
         printf("Błąd: head jest NULL\n");
@@ -334,6 +412,9 @@ int save_to_file_bin(Node* head, const char* filename){
     printf("Zapisano %d wpis(ów) do pliku binarnego: %s\n", count, filename);
     return count;
 }
+int load_from_file(Node* head, const char* filename);
+int load_from_file_bin(Node* head, const char* filename);
+
 
 
 
