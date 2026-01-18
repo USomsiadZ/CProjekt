@@ -440,11 +440,99 @@ int edit_post(Node* head, int id, int field, const void* new_value) {
 
 
 // wyszukiwanie
-Node* search_by_author(Node* head, const char* author, bool prefix_match);
-Node* search_by_report_count(Node* head, int count);
+int search_by_author(Node* head, const char* author, bool prefix_match) {
+    if (head == NULL || author == NULL) {
+        printf("Błąd: nieprawidłowe parametry\n");
+        return 0;
+    }
+    
+    Node* p = head;
+    while (p->prev != NULL) {
+        p = p->prev;
+    }
+    
+    int count = 0;
+    size_t author_len = strlen(author);
+    
+    while (p != NULL) {
+        bool match = false;
+        if (prefix_match) {
+            match = (strncmp(p->data->author, author, author_len) == 0);
+        } else {
+            match = (strcmp(p->data->author, author) == 0);
+        }
+        
+        if (match) {
+            printf("ID: %d, Autor: %s, Treść: %s, Kategoria: %s, Zgłoszenia: %d, Status: %s\n", p->data->id, p->data->author, p->data->content, p->data->category, p->data->report_count, p->data->status);
+            count++;
+        }
+        p = p->next;
+    }
+    
+    if (count == 0) {
+        printf("Nie znaleziono wpisów dla autora: %s\n", author);
+    } else {
+        printf("Znaleziono %d wpis(ów)\n", count);
+    }
+    
+    return count;
+}
+
+int search_by_report_count(Node* head, int count) {
+    if (head == NULL || count < 0) {
+        printf("Błąd: nieprawidłowe parametry\n");
+        return 0;
+    }
+    
+    Node* p = head;
+    while (p->prev != NULL) {
+        p = p->prev;
+    }
+    
+    int found = 0;
+    
+    while (p != NULL) {
+        if (p->data->report_count == count) {
+            printf("ID: %d, Autor: %s, Treść: %s, Kategoria: %s, Zgłoszenia: %d, Status: %s\n", p->data->id, p->data->author, p->data->content, p->data->category, p->data->report_count, p->data->status);
+            found++;
+        }
+        p = p->next;
+    }
+    
+    if (found == 0) {
+        printf("Nie znaleziono wpisów z liczbą zgłoszeń: %d\n", count);
+    } else {
+        printf("Znaleziono %d wpis(ów)\n", found);
+    }
+    
+    return found;
+}
 
 // sortowanie
-Node* sort_by_author(Node* head);
+// https://visualgo.net/en/sorting
+/*
+[5, 2, 8, 1, 9]
+ ^  ^  porównaj 5 > 2? TAK → zamień
+[2, 5, 8, 1, 9]
+    ^  ^  porównaj 5 > 8? NIE
+[2, 5, 8, 1, 9]
+       ^  ^  porównaj 8 > 1? TAK → zamień
+[2, 5, 1, 8, 9]
+          ^  ^  porównaj 8 > 9? NIE
+[2, 5, 1, 8, 9]  ← koniec przejścia, 9 na końcu
+*/
+Node* sort_by_author(Node* head){
+    if (head == NULL) {
+        printf("Błąd: head jest NULL\n");
+        return NULL;
+    }
+    
+    Node* p = head;
+    while (p->prev != NULL) {
+        p = p->prev;
+    }
+
+}
 Node* sort_by_report_count(Node* head);
 
 // wyświetlanie
