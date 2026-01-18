@@ -37,6 +37,12 @@ status moderacji - aktualny stan wpisu, np.: do weryfikacji, w trakcie analizy, 
 #define STATUS_APPROVED "zatwierdzone"
 #define STATUS_DELETED "usunięte"
 
+#define FIELD_AUTHOR 0
+#define FIELD_CONTENT 1
+#define FIELD_CATEGORY 2
+#define FIELD_STATUS 3
+#define FIELD_REPORT_COUNT 4
+
 typedef struct Wpis {
     int id;
     char author[MAX_AUTHOR_LEN];
@@ -242,6 +248,20 @@ Wpis* add_post(Node* head, const char* author, const char* content, const char* 
     printf("Dodano wpis ID: %d\n", wpis->id);
     return wpis;
 }
+
+bool can_delete_post(const Wpis* wpis) {
+    if (wpis == NULL) {
+        return false;
+    }
+    
+    if (strcmp(wpis->status, STATUS_TO_VERIFY) == 0 ||
+        strcmp(wpis->status, STATUS_IN_ANALYSIS) == 0) {
+        return false;
+    }
+    
+    return true;
+}
+
 int remove_post(Node* head, int id){
     if(head == NULL){
         printf("Błąd: head jest NULL\n");
@@ -252,15 +272,29 @@ int remove_post(Node* head, int id){
     while(p->prev != NULL){
         p = p->prev;
     }
+    
     while(p != NULL){
-        if(p->data->id == id){
-            Node* next = p->next;
+        if(p->data != NULL && p->data->id == id){
+            if(!can_delete_post(p->data)){
+                printf("Błąd: nie można usunąć wpisu ID %d - status '%s' wymaga najpierw analizy\n", id, p->data->status);
+                return 0;
+            }
+            
+            if(p->prev != NULL){
+                p->prev->next = p->next;
+            }
+            if(p->next != NULL){
+                p->next->prev = p->prev;
+            }
+            
             free(p->data);
             free(p);
             return 1;
         }
         p = p->next;
     }
+    
+    printf("Błąd: nie znaleziono wpisu o ID: %d\n", id);
     return 0;
 }
 int remove_posts_by_status(Node* head, const char* status){
@@ -310,12 +344,100 @@ int remove_posts_by_status(Node* head, const char* status){
     
     return removed_count;
 }
-Wpis* find_post_by_id(Node* head, int id);
 
-// edycja postów
-int edit_post(Node* head, int id, const char* name, const void* new_value);
-int update_post_status(Node* head, int id, const char* new_status);
-bool can_delete_post(const Wpis* wpis);
+Wpis* find_post_by_id(Node* head, int id) {
+    if (head == NULL) {
+        return NULL;
+    }
+    
+    Node* p = head;
+    while (p->prev != NULL) {
+        p = p->prev;
+    }
+    
+    while (p != NULL) {
+        if (p->data != NULL && p->data->id == id) {
+            return p->data;
+        }
+        p = p->next;
+    }
+    
+    return NULL;
+}
+
+int update_post_status(Node* head, int id, const char* new_status) {
+    if (head == NULL) {
+        printf("Błąd: head jest NULL\n");
+        return 0;
+    }
+    
+    if (!validate_status(new_status)) {
+        printf("Błąd: nieprawidłowy status\n");
+        return 0;
+    }
+    
+    Wpis* p = find_post_by_id(head, id);
+    if (p == NULL) {
+        printf("Błąd: nie znaleziono wpisu o ID: %d\n", id);
+        return 0;
+    }
+    
+    strcpy(p->status, new_status);
+    return 1;
+}
+
+int edit_post(Node* head, int id, int field, const void* new_value) {
+    if (head == NULL) {
+        printf("Błąd: head jest NULL\n");
+        return 0;
+    }
+    
+    if (new_value == NULL) {
+        printf("Błąd: nieprawidłowe parametry\n");
+        return 0;
+    }
+    
+    Wpis* wpis = find_post_by_id(head, id);
+    if (wpis == NULL) {
+        printf("Błąd: nie znaleziono wpisu o ID: %d\n", id);
+        return 0;
+    }
+    
+    switch (field) {
+        case FIELD_AUTHOR:
+            if (!validate_author((const char*)new_value)) return 0;
+            strcpy(wpis->author, (const char*)new_value);
+            break;
+        
+        case FIELD_CONTENT:
+            if (!validate_content((const char*)new_value)) return 0;
+            strcpy(wpis->content, (const char*)new_value);
+            break;
+        
+        case FIELD_CATEGORY:
+            if (!validate_category((const char*)new_value)) return 0;
+            strcpy(wpis->category, (const char*)new_value);
+            break;
+        
+        case FIELD_STATUS:
+            if (!validate_status((const char*)new_value)) return 0;
+            strcpy(wpis->status, (const char*)new_value);
+            break;
+        
+        case FIELD_REPORT_COUNT:
+            if (*(const int*)new_value < 0) return 0;
+            wpis->report_count = *(const int*)new_value;
+            break;
+        
+        default:
+            printf("Błąd: nieznane pole: %d\n", field);
+            return 0;
+    }
+    
+    return 1;
+}
+
+
 
 // wyszukiwanie
 Node* search_by_author(Node* head, const char* author, bool prefix_match);
