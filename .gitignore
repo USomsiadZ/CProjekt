@@ -58,5 +58,4 @@ dkms.conf
 .DS_Store
 .vscode
 output/main
-main
 posts.txt
