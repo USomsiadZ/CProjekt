@@ -57,3 +57,5 @@ dkms.conf
 .ignore
 .DS_Store
 .vscode
+output/main
+main

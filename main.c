@@ -31,6 +31,7 @@ status moderacji - aktualny stan wpisu, np.: do weryfikacji, w trakcie analizy, 
 #define CATEGORY_PROFANITY "wulgaryzmy"
 #define CATEGORY_FAKE_NEWS "fejk-news"
 #define CATEGORY_INAPPROPRIATE "nieodpowiednie treści"
+#define CATEGORY_OK "ok"
 
 #define STATUS_TO_VERIFY "do weryfikacji"
 #define STATUS_IN_ANALYSIS "w trakcie analizy"
@@ -58,6 +59,19 @@ typedef struct Node {
     struct Node* next;
 } Node;
 
+Node* get_list_head(Node* head) {
+    if (head == NULL) {
+        return NULL;
+    }
+    Node* p = head;
+    while (p->prev != NULL) {
+        p = p->prev;
+    }
+    if (p->data == NULL) {
+        return NULL;
+    }
+    return p;
+}
 // walidacja
 bool validate_author(const char* author) {
     if (author == NULL) {
@@ -102,7 +116,8 @@ bool validate_category(const char* category) {
         strcmp(category, CATEGORY_HATE) == 0 ||
         strcmp(category, CATEGORY_PROFANITY) == 0 ||
         strcmp(category, CATEGORY_FAKE_NEWS) == 0 ||
-        strcmp(category, CATEGORY_INAPPROPRIATE) == 0) {
+        strcmp(category, CATEGORY_INAPPROPRIATE) == 0 ||
+        strcmp(category, CATEGORY_OK) == 0) {
         return true;
     }
     
@@ -123,16 +138,9 @@ bool validate_status(const char* status) {
     return false;
 }
 int get_next_id(Node* head) {
-    if (head == NULL) {
-        return 1;
-    }
+    Node* p = get_list_head(head);
     
-    Node* p = head;
-    while (p->prev != NULL) {
-        p = p->prev;
-    }
-    
-    if (p->data == NULL) {
+    if (p == NULL) {
         return 1;
     }
     
@@ -161,6 +169,8 @@ Node* create_node(void){
     n->next = NULL;
     return n;
 }
+
+
 void destroy_node(Node* head) {
     if (head == NULL) {
         printf("Błąd: head jest NULL\n");
@@ -184,11 +194,6 @@ void destroy_node(Node* head) {
 
 // operacje na postach
 Wpis* add_post(Node* head, const char* author, const char* content, const char* category, const char* status){
-    if(head == NULL){
-        printf("Błąd: head jest NULL\n");
-        return NULL;
-    }
-    
     if(!validate_author(author)){
         printf("Błąd: nieprawidłowa nazwa autora\n");
         return NULL;
@@ -221,8 +226,14 @@ Wpis* add_post(Node* head, const char* author, const char* content, const char* 
     strcpy(wpis->status, status);
     
 
+    if (head == NULL) {
+        printf("Błąd: head jest NULL\n");
+        free(wpis);
+        return NULL;
+    }
+    
     Node* p = head;
-    while(p->prev != NULL){
+    while (p->prev != NULL) {
         p = p->prev;
     }
     
@@ -263,14 +274,10 @@ bool can_delete_post(const Wpis* wpis) {
 }
 
 int remove_post(Node* head, int id){
-    if(head == NULL){
+    Node* p = get_list_head(head);
+    if (p == NULL) {
         printf("Błąd: head jest NULL\n");
         return 0;
-    }
-    
-    Node* p = head;
-    while(p->prev != NULL){
-        p = p->prev;
     }
     
     while(p != NULL){
@@ -298,23 +305,18 @@ int remove_post(Node* head, int id){
     return 0;
 }
 int remove_posts_by_status(Node* head, const char* status){
-    if(head == NULL) {
-        printf("Błąd: head jest NULL\n");
-        return 0;
-    }
-    
     if(status == NULL) {
         printf("Błąd: status jest NULL\n");
         return 0;
     }
 
-    int removed_count = 0;
-    Node* p = head;
-    
-
-    while(p->prev != NULL) {
-        p = p->prev;
+    Node* p = get_list_head(head);
+    if (p == NULL) {
+        printf("Błąd: head jest NULL\n");
+        return 0;
     }
+
+    int removed_count = 0;
 
     while(p != NULL) {
         Node* next = p->next;
@@ -346,13 +348,9 @@ int remove_posts_by_status(Node* head, const char* status){
 }
 
 Wpis* find_post_by_id(Node* head, int id) {
-    if (head == NULL) {
+    Node* p = get_list_head(head);
+    if (p == NULL) {
         return NULL;
-    }
-    
-    Node* p = head;
-    while (p->prev != NULL) {
-        p = p->prev;
     }
     
     while (p != NULL) {
@@ -366,11 +364,6 @@ Wpis* find_post_by_id(Node* head, int id) {
 }
 
 int update_post_status(Node* head, int id, const char* new_status) {
-    if (head == NULL) {
-        printf("Błąd: head jest NULL\n");
-        return 0;
-    }
-    
     if (!validate_status(new_status)) {
         printf("Błąd: nieprawidłowy status\n");
         return 0;
@@ -387,11 +380,6 @@ int update_post_status(Node* head, int id, const char* new_status) {
 }
 
 int edit_post(Node* head, int id, int field, const void* new_value) {
-    if (head == NULL) {
-        printf("Błąd: head jest NULL\n");
-        return 0;
-    }
-    
     if (new_value == NULL) {
         printf("Błąd: nieprawidłowe parametry\n");
         return 0;
@@ -441,14 +429,15 @@ int edit_post(Node* head, int id, int field, const void* new_value) {
 
 // wyszukiwanie
 int search_by_author(Node* head, const char* author, bool prefix_match) {
-    if (head == NULL || author == NULL) {
+    if (author == NULL) {
         printf("Błąd: nieprawidłowe parametry\n");
         return 0;
     }
     
-    Node* p = head;
-    while (p->prev != NULL) {
-        p = p->prev;
+    Node* p = get_list_head(head);
+    if (p == NULL) {
+        printf("Błąd: head jest NULL\n");
+        return 0;
     }
     
     int count = 0;
@@ -479,14 +468,15 @@ int search_by_author(Node* head, const char* author, bool prefix_match) {
 }
 
 int search_by_report_count(Node* head, int count) {
-    if (head == NULL || count < 0) {
+    if (count < 0) {
         printf("Błąd: nieprawidłowe parametry\n");
         return 0;
     }
     
-    Node* p = head;
-    while (p->prev != NULL) {
-        p = p->prev;
+    Node* p = get_list_head(head);
+    if (p == NULL) {
+        printf("Błąd: head jest NULL\n");
+        return 0;
     }
     
     int found = 0;
@@ -533,10 +523,7 @@ Node* sort_by_author(Node* head){
         return NULL;
     }
     
-    Node* p = head;
-    while (p->prev != NULL) {
-        p = p->prev;
-    }
+    Node* p = get_list_head(head);
     
     if (p->data == NULL) {
         return p;
@@ -547,10 +534,7 @@ Node* sort_by_author(Node* head){
         count++;
         p = p->next;
     }
-    p = head;
-    while (p->prev != NULL) {
-        p = p->prev;
-    }
+    p = get_list_head(head);
     
     for (int i = 0; i < count - 1; i++) {
         while (p->next != NULL) {
@@ -572,10 +556,7 @@ Node* sort_by_report_count(Node* head){
         return NULL;
     }
     
-    Node* p = head;
-    while (p->prev != NULL) {
-        p = p->prev;
-    }
+    Node* p = get_list_head(head);
     
     if (p->data == NULL) {
         return p;
@@ -586,10 +567,7 @@ Node* sort_by_report_count(Node* head){
         count++;
         p = p->next;
     }
-    p = head;
-    while (p->prev != NULL) {
-        p = p->prev;
-    }
+    p = get_list_head(head);
     
     for (int i = 0; i < count - 1; i++) {
         while (p->next != NULL) {
@@ -606,20 +584,40 @@ Node* sort_by_report_count(Node* head){
 }
 
 // wyświetlanie
-void display_post(const Wpis* wpis);
-void display_all_posts(Node* head);
-void display_search_results(Node* results);
-void display_post_summary(Node* head);
+void display_all_posts(Node* head){
+    Node* p = get_list_head(head);
+    if (p == NULL) {
+        printf("Błąd: head jest NULL\n");
+        return;
+    }
+    
+    int count = 0;
+    
+    while (p != NULL) {
+        if (p->data != NULL) {
+            printf("ID: %d, Autor: %s, Treść: %s, Kategoria: %s, Zgłoszenia: %d, Status: %s\n", p->data->id, p->data->author, p->data->content, p->data->category, p->data->report_count, p->data->status);
+            count++;
+        }
+        p = p->next;
+    }
+    
+    if (count == 0) {
+        printf("Brak wpisów w bazie\n");
+    } else {
+        printf("Wyświetlono %d wpis(ów)\n", count);
+    }
+}
 
 // pliki
 int save_to_file(Node* head, const char* filename){
-    if(head == NULL){
-        printf("Błąd: head jest NULL\n");
+    if(filename == NULL){
+        printf("Błąd: nazwa pliku jest NULL\n");
         return 0;
     }
     
-    if(filename == NULL){
-        printf("Błąd: nazwa pliku jest NULL\n");
+    Node* p = get_list_head(head);
+    if (p == NULL) {
+        printf("Błąd: head jest NULL\n");
         return 0;
     }
     
@@ -627,11 +625,6 @@ int save_to_file(Node* head, const char* filename){
     if(!f){
         printf("Błąd otwierania pliku\n");
         return 0;
-    }
-
-    Node* p = head;
-    while(p->prev != NULL){
-        p = p->prev;
     }
     
     int count = 0;
@@ -654,27 +647,21 @@ int save_to_file(Node* head, const char* filename){
     return count;
 }
 int save_to_file_bin(Node* head, const char* filename){
-    if(head == NULL){
-        printf("Błąd: head jest NULL\n");
-        return 0;
-    }
-    
     if(filename == NULL){
         printf("Błąd: nazwa pliku jest NULL\n");
         return 0;
     }
     
-    // Otwórz plik w trybie binarnym
+    Node* p = get_list_head(head);
+    if (p == NULL) {
+        printf("Błąd: head jest NULL\n");
+        return 0;
+    }
+    
     FILE* f = fopen(filename, "wb");
     if(!f){
         perror("Błąd otwierania pliku");
         return 0;
-    }
-    
-    // Przejdź do początku listy
-    Node* p = head;
-    while(p->prev != NULL){
-        p = p->prev;
     }
     
     int count = 0;
@@ -692,8 +679,100 @@ int save_to_file_bin(Node* head, const char* filename){
     printf("Zapisano %d wpis(ów) do pliku binarnego: %s\n", count, filename);
     return count;
 }
-int load_from_file(Node* head, const char* filename);
-int load_from_file_bin(Node* head, const char* filename);
+int load_from_file(Node* head, const char* filename){
+    if(filename == NULL){
+        printf("Błąd: nazwa pliku jest NULL\n");
+        return 0;
+    }
+    
+    if(head == NULL){
+        printf("Błąd: head jest NULL\n");
+        return 0;
+    }
+    
+    FILE* f = fopen(filename, "r");
+    if(!f){
+        printf("Błąd otwierania pliku: %s\n", filename);
+        return 0;
+    }
+    
+    int count = 0;
+    int id;
+    char author[MAX_AUTHOR_LEN];
+    char content[MAX_CONTENT_LEN];
+    char category[MAX_CATEGORY_LEN];
+    int report_count;
+    char status[MAX_STATUS_LEN];
+    
+    // Wczytaj wszystkie wpisy z pliku
+    while(fscanf(f, "%d\n", &id) == 1){
+        if(fgets(author, sizeof(author), f) == NULL) break;
+        if(fgets(content, sizeof(content), f) == NULL) break;
+        if(fgets(category, sizeof(category), f) == NULL) break;
+        if(fscanf(f, "%d\n", &report_count) != 1) break;
+        if(fgets(status, sizeof(status), f) == NULL) break;
+        
+        // Usuń znaki nowej linii
+        size_t len = strlen(author);
+        if(len > 0 && author[len-1] == '\n') author[len-1] = '\0';
+        len = strlen(content);
+        if(len > 0 && content[len-1] == '\n') content[len-1] = '\0';
+        len = strlen(category);
+        if(len > 0 && category[len-1] == '\n') category[len-1] = '\0';
+        len = strlen(status);
+        if(len > 0 && status[len-1] == '\n') status[len-1] = '\0';
+        
+        // Dodaj wpis do listy
+        Wpis* added = add_post(head, author, content, category, status);
+        if(added != NULL){
+            // Ustaw ID i report_count ręcznie, bo add_post generuje nowe ID
+            added->id = id;
+            added->report_count = report_count;
+            count++;
+        }
+    }
+    
+    fclose(f);
+    printf("Wczytano %d wpis(ów) z pliku: %s\n", count, filename);
+    return count;
+}
+
+int load_from_file_bin(Node* head, const char* filename){
+    if(filename == NULL){
+        printf("Błąd: nazwa pliku jest NULL\n");
+        return 0;
+    }
+    
+    if(head == NULL){
+        printf("Błąd: head jest NULL\n");
+        return 0;
+    }
+    
+    FILE* f = fopen(filename, "rb");
+    if(!f){
+        printf("Błąd otwierania pliku: %s\n", filename);
+        return 0;
+    }
+    
+    int count = 0;
+    Wpis wpis;
+    
+    // Wczytaj wszystkie wpisy z pliku binarnego
+    while(fread(&wpis, sizeof(Wpis), 1, f) == 1){
+        // Dodaj wpis do listy
+        Wpis* added = add_post(head, wpis.author, wpis.content, wpis.category, wpis.status);
+        if(added != NULL){
+            // Ustaw ID i report_count ręcznie, bo add_post generuje nowe ID
+            added->id = wpis.id;
+            added->report_count = wpis.report_count;
+            count++;
+        }
+    }
+    
+    fclose(f);
+    printf("Wczytano %d wpis(ów) z pliku binarnego: %s\n", count, filename);
+    return count;
+}
 
 
 
@@ -701,19 +780,254 @@ int load_from_file_bin(Node* head, const char* filename);
 
 
 // menu i interfejs
-void show_add_post_menu(Node* head);
-void show_edit_post_menu(Node* head);
-void show_delete_post_menu(Node* head);
-void show_search_menu(Node* head);
-void show_sort_menu(Node* head);
-void show_file_menu(Node* head, const char* filename, bool binary);
+void read_string(char* buf, int size) {
+    if (fgets(buf, size, stdin) == NULL) {
+        buf[0] = '\0';
+        return;
+    }
+    int len = strlen(buf);
+    if (len > 0 && buf[len-1] == '\n') {
+        buf[len-1] = '\0';
+    } else if (len == size - 1) {
+        while(getchar() != '\n');
+    }
+}
 
+int read_int() {
+    int value;
+    if (scanf("%d", &value) != 1) {
+        while(getchar() != '\n');
+        return -1;
+    }
+    while(getchar() != '\n');
+    return value;
+}
 
+void get_category(char* category) {
+    printf("Wybierz kategorię:\n");
+    printf("1. %s\n", CATEGORY_SPAM);
+    printf("2. %s\n", CATEGORY_HATE);
+    printf("3. %s\n", CATEGORY_PROFANITY);
+    printf("4. %s\n", CATEGORY_FAKE_NEWS);
+    printf("5. %s\n", CATEGORY_INAPPROPRIATE);
+    printf("6. %s\n", CATEGORY_OK);
+    printf("Wybierz: ");
+    int w = read_int();
+    switch(w) {
+        case 1: strcpy(category, CATEGORY_SPAM); break;
+        case 2: strcpy(category, CATEGORY_HATE); break;
+        case 3: strcpy(category, CATEGORY_PROFANITY); break;
+        case 4: strcpy(category, CATEGORY_FAKE_NEWS); break;
+        case 5: strcpy(category, CATEGORY_INAPPROPRIATE); break;
+        case 6: strcpy(category, CATEGORY_OK); break;
+        default: category[0] = '\0';
+    }
+}
 
+void get_status(char* status) {
+    printf("Wybierz status:\n");
+    printf("1. %s\n", STATUS_TO_VERIFY);
+    printf("2. %s\n", STATUS_IN_ANALYSIS);
+    printf("3. %s\n", STATUS_APPROVED);
+    printf("4. %s\n", STATUS_DELETED);
+    printf("Wybierz: ");
+    int w = read_int();
+    switch(w) {
+        case 1: strcpy(status, STATUS_TO_VERIFY); break;
+        case 2: strcpy(status, STATUS_IN_ANALYSIS); break;
+        case 3: strcpy(status, STATUS_APPROVED); break;
+        case 4: strcpy(status, STATUS_DELETED); break;
+        default: status[0] = '\0';
+    }
+}
 
+void show_add_post_menu(Node* head){
+    char author[MAX_AUTHOR_LEN];
+    char content[MAX_CONTENT_LEN];
+    char category[MAX_CATEGORY_LEN];
+    char status[MAX_STATUS_LEN];
+    
+    printf("\n=== DODAWANIE NOWEGO POSTA ===\n");
+    printf("Podaj autora: ");
+    read_string(author, sizeof(author));
+    printf("Podaj treść: ");
+    read_string(content, sizeof(content));
+    get_category(category);
+    if (!category[0]) {
+        printf("Nieprawidłowy wybór kategorii\n");
+        return;
+    }
+    get_status(status);
+    if (!status[0]) {
+        printf("Nieprawidłowy wybór statusu\n");
+        return;
+    }
+    add_post(head, author, content, category, status);
+}
 
+void show_edit_post_menu(Node* head){
+    printf("\n=== EDYCJA POSTA ===\n");
+    printf("Podaj ID posta do edycji: ");
+    int id = read_int();
+    if (id < 0) return;
+    
+    printf("Wybierz pole do edycji:\n");
+    printf("0. Autor\n");
+    printf("1. Treść\n");
+    printf("2. Kategoria\n");
+    printf("3. Status\n");
+    printf("4. Liczba zgłoszeń\n");
+    printf("Wybierz: ");
+    int f = read_int();
+    if (f < 0 || f > 4) {
+        printf("Nieprawidłowy wybór pola\n");
+        return;
+    }
+    
+    if (f == FIELD_AUTHOR) {
+        char author[MAX_AUTHOR_LEN];
+        printf("Podaj nowego autora: ");
+        read_string(author, sizeof(author));
+        if (edit_post(head, id, f, author)) printf("Zaktualizowano autora\n");
+    } else if (f == FIELD_CONTENT) {
+        char content[MAX_CONTENT_LEN];
+        printf("Podaj nową treść: ");
+        read_string(content, sizeof(content));
+        if (edit_post(head, id, f, content)) printf("Zaktualizowano treść\n");
+    } else if (f == FIELD_CATEGORY) {
+        char category[MAX_CATEGORY_LEN];
+        get_category(category);
+        if (!edit_post(head, id, f, category)) {
+            printf("Nieprawidłowy wybór kategorii\n");
+        } else {
+            printf("Zaktualizowano kategorię\n");
+        }
+    } else if (f == FIELD_STATUS) {
+        char status[MAX_STATUS_LEN];
+        get_status(status);
+        if (!edit_post(head, id, f, status)) {
+            printf("Nieprawidłowy wybór statusu\n");
+        } else {
+            printf("Zaktualizowano status\n");
+        }
+    } else if (f == FIELD_REPORT_COUNT) {
+        printf("Podaj nową liczbę zgłoszeń: ");
+        int count = read_int();
+        if (count >= 0 && edit_post(head, id, f, &count)) {
+            printf("Zaktualizowano liczbę zgłoszeń\n");
+        }
+    }
+}
 
+void show_delete_post_menu(Node* head){
+    printf("\n=== USUWANIE POSTA ===\n");
+    printf("1. Usuń pojedynczy post (po ID)\n");
+    printf("2. Usuń posty po statusie\n");
+    printf("Wybierz: ");
+    int w = read_int();
+    
+    if (w == 1) {
+        printf("Podaj ID posta do usunięcia: ");
+        int id = read_int();
+        if (id >= 0) remove_post(head, id);
+    } else if (w == 2) {
+        char status[MAX_STATUS_LEN];
+        get_status(status);
+        //pusty
+        if (status[0]) {
+            remove_posts_by_status(head, status);
+        } else {
+            printf("Nieprawidłowy wybór statusu\n");
+        }
+    } else {
+        printf("Nieprawidłowy wybór\n");
+    }
+}
 
+void show_search_menu(Node* head){
+    printf("\n=== WYSZUKIWANIE POSTÓW ===\n");
+    printf("1. Wyszukaj po autorze\n");
+    printf("2. Wyszukaj po liczbie zgłoszeń\n");
+    printf("Wybierz: ");
+    int w = read_int();
+    
+    if (w == 1) {
+        printf("1. Dopasowanie pełne\n");
+        printf("2. Dopasowanie prefiksowe\n");
+        printf("Wybierz: ");
+        int match_type = read_int();
+        if (match_type < 1 || match_type > 2) return;
+        
+        char author[MAX_AUTHOR_LEN];
+        printf("Podaj autora: ");
+        read_string(author, sizeof(author));
+        search_by_author(head, author, match_type == 2);
+    } else if (w == 2) {
+        printf("Podaj liczbę zgłoszeń: ");
+        int count = read_int();
+        if (count >= 0) search_by_report_count(head, count);
+    } else {
+        printf("Nieprawidłowy wybór\n");
+    }
+}
+
+Node* show_sort_menu(Node* head){
+    printf("\n=== SORTOWANIE POSTÓW ===\n");
+    printf("1. Sortuj po autorze\n");
+    printf("2. Sortuj po liczbie zgłoszeń\n");
+    printf("Wybierz: ");
+    int w = read_int();
+    
+    if (w == 1) {
+        Node* sorted = sort_by_author(head);
+        if (sorted != NULL) {
+            printf("Posortowano posty po autorze\n");
+            display_all_posts(sorted);
+            return sorted;
+        }
+    } else if (w == 2) {
+        Node* sorted = sort_by_report_count(head);
+        if (sorted != NULL) {
+            printf("Posortowano posty po liczbie zgłoszeń\n");
+            display_all_posts(sorted);
+            return sorted;
+        }
+    } else {
+        printf("Nieprawidłowy wybór\n");
+    }
+    return head;
+}
+
+void show_file_menu(Node* head, const char* filename){
+    printf("\n=== ZARZĄDZANIE PLIKAMI (TEKSTOWE) ===\n");
+    printf("1. Zapisz do pliku\n2. Wczytaj z pliku\n");
+    printf("Wybierz: ");
+    int w = read_int();
+    
+    if (w == 1) {
+        save_to_file(head, filename);
+    } else if (w == 2) {
+        load_from_file(head, filename);
+    } else {
+        printf("Nieprawidłowy wybór\n");
+    }
+}
+
+void show_file_menu_bin(Node* head, const char* filename){
+    printf("\n=== ZARZĄDZANIE PLIKAMI (BINARNE) ===\n");
+    printf("1. Zapisz do pliku\n");
+    printf("2. Wczytaj z pliku\n");
+    printf("Wybierz: ");
+    int w = read_int();
+    
+    if (w == 1) {
+        save_to_file_bin(head, filename);
+    } else if (w == 2) {
+        load_from_file_bin(head, filename);
+    } else {
+        printf("Nieprawidłowy wybór\n");
+    }
+}
 
 
 
@@ -734,9 +1048,9 @@ void show_file_menu(Node* head, const char* filename, bool binary);
 
 void show_menu(void){
     printf("\n=== SYSTEM MODERACJI POSTÓW QUICKTALK ===\n");
-    printf("1. Dodaj nowy p\n");
-    printf("2. Edytuj p\n");
-    printf("3. Usuń p\n");
+    printf("1. Dodaj nowy post\n");
+    printf("2. Edytuj post\n");
+    printf("3. Usuń post\n");
     printf("4. Wyświetl wszystkie posty\n");
     printf("5. Wyszukaj posty\n");
     printf("6. Sortuj posty\n");
@@ -745,18 +1059,12 @@ void show_menu(void){
     printf("Wybierz opcję: ");
 }
 
-int option_menu(Node* head){
-    int wybor;
-    int result;
-    printf("\n");
-    printf("Podaj numer opcji: ");
-    result = scanf("%d", &wybor);
+Node* option_menu(Node* head){
+    int wybor = read_int();
 
-    while(getchar() != '\n');
-
-    if(result != 1 || wybor < 0 || wybor > 7) {
+    if(wybor < 0 || wybor > 7) {
         printf("Nieznana opcja. Wybierz poprawną liczbę z menu.\n");
-        return 1;
+        return head;
     }
 
     switch(wybor) {
@@ -776,31 +1084,39 @@ int option_menu(Node* head){
             show_search_menu(head);
             break;
         case 6:
-            show_sort_menu(head);
+            head = show_sort_menu(head);
             break;
         case 7:
-            show_file_menu(head, "posts.txt", false);
+            show_file_menu(head, "posts.txt");
             break;
         case 0:
             printf("Wyjście z programu\n");
-            return 0;
+            return NULL;
         default:
             printf("Nieznana opcja. Wybierz poprawną liczbę z menu.\n");
             break;
     }
-    return 1;
+    return head;
 }
 
 
-int main(int argc, char* argv[]){
+int main(void){
     Node* head = create_node();
+    if(head == NULL){
+        printf("Błąd: nie udało się utworzyć listy\n");
+        return 1;
+    }
+    
     while(1){
         show_menu();
-        if(option_menu(head) == 0){
+        head = option_menu(head);
+        if(head == NULL){
             break;
         }
-        // kod
     }
-    destroy_node(head);
+    
+    if(head != NULL){
+        destroy_node(head);
+    }
     return 0;
 }
