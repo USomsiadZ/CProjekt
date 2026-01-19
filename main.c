@@ -1059,7 +1059,7 @@ void show_menu(void){
     printf("Wybierz opcję: ");
 }
 
-Node* option_menu(Node* head){
+Node* option_menu(Node* head, const char* filename){
     int wybor = read_int();
 
     if(wybor < 0 || wybor > 7) {
@@ -1087,7 +1087,19 @@ Node* option_menu(Node* head){
             head = show_sort_menu(head);
             break;
         case 7:
-            show_file_menu(head, "posts.txt");
+            printf("\n=== ZARZĄDZANIE PLIKAMI ===\n");
+            printf("1. Plik tekstowy\n");
+            printf("2. Plik binarny\n");
+            printf("Wybierz typ pliku: ");
+            int file_type = read_int();
+            
+            if (file_type == 1) {
+                show_file_menu(head, filename);
+            } else if (file_type == 2) {
+                show_file_menu_bin(head, filename);
+            } else {
+                printf("Nieprawidłowy wybór\n");
+            }
             break;
         case 0:
             printf("Wyjście z programu\n");
@@ -1100,7 +1112,17 @@ Node* option_menu(Node* head){
 }
 
 
-int main(void){
+int main(int argc, char* argv[]){
+    const char* filename;
+    
+    if(argc < 2){
+        printf("Używam domyślnej nazwy pliku: posts.txt\n");
+        filename = "posts.txt";
+    } else {
+        filename = argv[1];
+        printf("Używam pliku: %s\n", filename);
+    }
+    
     Node* head = create_node();
     if(head == NULL){
         printf("Błąd: nie udało się utworzyć listy\n");
@@ -1109,7 +1131,7 @@ int main(void){
     
     while(1){
         show_menu();
-        head = option_menu(head);
+        head = option_menu(head, filename);
         if(head == NULL){
             break;
         }
