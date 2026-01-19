@@ -521,6 +521,12 @@ int search_by_report_count(Node* head, int count) {
           ^  ^  porównaj 8 > 9? NIE
 [2, 5, 1, 8, 9]  ← koniec przejścia, 9 na końcu
 */
+void swap_wpis(Wpis** a, Wpis** b) {
+    Wpis* temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
 Node* sort_by_author(Node* head){
     if (head == NULL) {
         printf("Błąd: head jest NULL\n");
@@ -531,9 +537,73 @@ Node* sort_by_author(Node* head){
     while (p->prev != NULL) {
         p = p->prev;
     }
-
+    
+    if (p->data == NULL) {
+        return p;
+    }
+    
+    int count = 0;
+    while (p != NULL) {
+        count++;
+        p = p->next;
+    }
+    p = head;
+    while (p->prev != NULL) {
+        p = p->prev;
+    }
+    
+    for (int i = 0; i < count - 1; i++) {
+        while (p->next != NULL) {
+            if (strcmp(p->data->author, p->next->data->author) > 0) {
+                swap_wpis(&p->data, &p->next->data);
+            }
+            p = p->next;
+        }
+        while (p->prev != NULL) {
+            p = p->prev;
+        }
+    }
+    return p;
 }
-Node* sort_by_report_count(Node* head);
+
+Node* sort_by_report_count(Node* head){
+    if (head == NULL) {
+        printf("Błąd: head jest NULL\n");
+        return NULL;
+    }
+    
+    Node* p = head;
+    while (p->prev != NULL) {
+        p = p->prev;
+    }
+    
+    if (p->data == NULL) {
+        return p;
+    }
+    
+    int count = 0;
+    while (p != NULL) {
+        count++;
+        p = p->next;
+    }
+    p = head;
+    while (p->prev != NULL) {
+        p = p->prev;
+    }
+    
+    for (int i = 0; i < count - 1; i++) {
+        while (p->next != NULL) {
+            if (p->data->report_count > p->next->data->report_count) {
+                swap_wpis(&p->data, &p->next->data);
+            }
+            p = p->next;
+        }
+        while (p->prev != NULL) {
+            p = p->prev;
+        }
+    }
+    return p;
+}
 
 // wyświetlanie
 void display_post(const Wpis* wpis);
